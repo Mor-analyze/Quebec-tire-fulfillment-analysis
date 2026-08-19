@@ -3,6 +3,7 @@
 A self-directed case study built to practice end-to-end diagnostic analysis: taking a vague stakeholder complaint, confirming whether it's real, quantifying it, and tracing it to a root cause using SQL and Python.
 
 > This project uses a simulated dataset generated with Python/Faker, built around a realistic distribution/logistics scenario, to practice the analysis process end to end.
+> Built with the help of Claude (Anthropic) — used for structuring the investigation narrative, drafting the written report, and as a sounding board for interpreting results. All queries, analysis decisions, and findings were run and verified by me.
 
 ## The scenario
 
