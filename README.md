@@ -1,56 +1,42 @@
-# Quebec Winter Tire Fulfillment Gap — Root-Cause Analysis
+# The Quebec Winter Tire Problem
 
-A self-directed case study built to practice end-to-end diagnostic analysis: taking a vague stakeholder complaint, confirming whether it's real, quantifying it, and tracing it to a root cause using SQL and Python.
+Every fall, sales reps in Quebec started hearing the same thing from garage owners: *"Sorry — we already ordered from someone else."* It kept happening right before winter tire season, the busiest stretch of the year, and always for the same reason — orders weren't showing up in time.
 
-> This project uses a simulated dataset built around a realistic distribution/logistics scenario, to practice the analysis process end to end.
+Leadership had complaints, but no numbers. Before committing budget to fix anything, they needed to know: was this actually happening, how much was it costing, and why?
 
-> The analysis — all SQL queries, findings, and business conclusions — is my own work, run and verified by me. I used Claude (Anthropic) to help write the README and final report.
-## The scenario
+## Confirming the complaint
 
-A VP of Sales gets anecdotal reports that Quebec garage customers are switching to competitors right before winter tire season, allegedly because orders can't be fulfilled in time. There's no hard data yet — just complaints — and leadership needs numbers before approving any budget to fix it.
+The first question wasn't "why" — it was "is this even real." Looking at winter tire orders specifically (rather than every order, which would have hidden the effect), one region stood out immediately.
 
-## Approach
+![Winter tire backordered and cancelled orders by province](assets/winter_backorder_by_province.png)
 
-Rather than jumping straight to "why," the analysis follows a deliberate sequence:
+Quebec wasn't just the worst region — it wasn't close. Once turned into a rate rather than a raw count, Quebec's winter tire backorder rate came out to roughly **29%**, compared to **4–8%** everywhere else. Order volume across regions was checked too, in case Quebec just processed more orders overall — it didn't. The gap was specific to fulfillment, not demand.
 
-1. **Confirm it's real** — check backorder rates for winter tires specifically, not all orders
-2. **Rule out the easy explanation** — check whether Quebec just has more order volume (it doesn't)
-3. **Size it over time** — confirm the pattern repeats across both years in the dataset
-4. **Quantify the impact** — price out unfulfilled units to get a dollar figure, not just an order count
-5. **Find the mechanism** — cross-reference against warehouse inventory snapshots to identify root cause
+## Putting a number on it
 
-## Key finding
+A backorder rate tells you something is wrong. It doesn't tell leadership what it's costing. Pricing out every unfulfilled tire during the September–November buying window turned the pattern into a dollar figure — and showed it wasn't a one-time blip.
 
-Quebec's winter tire backorder rate is **~29%**, four to seven times higher than every other region (4–8%), representing an estimated **$124,169 in at-risk revenue** across 738 short-shipped units and 87 orders (Sep–Nov, the pre-season buying window). The root cause: winter tire inventory at the Montreal distribution centre collapses to ~1,200–1,300 units every August through November — exactly when demand peaks — while every other region maintains 6,000–8,500 units through their own equivalent season.
+![At-risk revenue by month, Quebec winter tires](assets/lost_value_by_month.png)
 
-## Repo structure
+The same spike, almost to the month, in both years: roughly **$124,000 in at-risk revenue**, spread across 87 orders — and that's a floor, not a ceiling, since it only counts orders that were placed and partly unfulfilled. It doesn't count the customers who never placed an order at all because they went straight to a competitor.
 
-```
-├── data/
-│   └── tire_distributor.db        # SQLite database (warehouses, products, orders, order_items, inventory_snapshots)
-├── notebooks/
-│   └── analysis.ipynb             # Full query-by-query investigation, annotated
-├── report/
-│   └── Quebec_Winter_Tire_Report.docx   # Final stakeholder-facing report
-├── requirements.txt
-└── README.md
-```
+## Finding out why
 
-## Tech stack
+A pattern that specific, that consistent, pointed to something structural rather than bad luck. Comparing warehouse inventory across every region, month by month, showed exactly where it was coming from.
 
-- **SQLite** — order, product, warehouse, customer, and inventory data
-- **Python** (pandas, sqlite3, matplotlib) — querying and analysis in Jupyter
-- **Word (docx)** — final report
+![Winter tire inventory on hand by province, monthly](assets/inventory_by_province.png)
 
-## Limitations
+Four regions held steady stock year-round. Quebec's warehouse collapsed to a fraction of normal levels for four straight months — August through November — right as demand peaked. By the time stock recovered, the season causing the rush was already over.
 
-This analysis quantifies unfulfilled *orders* — it can't see demand that never became an order because a customer went straight to a competitor, which is the exact scenario the original complaint described. It also identifies *where and when* the inventory shortfall occurs, not *why* Montreal's replenishment schedule lags — that would require follow-up with procurement/supply chain data not present in this dataset. Full discussion in the report's Limitations section.
+## What this means
 
-## Run it yourself
+The fix isn't more warehouse capacity — it's timing. Quebec's stock was being drawn down and replenished on the same schedule as every other region, even though its demand curve looks nothing like theirs.
 
-```bash
-pip install -r requirements.txt
-jupyter notebook notebooks/analysis.ipynb
-```
+- **Move the replenishment schedule earlier** — stock should peak in June–July, not November, so it's already high when the September rush starts.
+- **Give Quebec its own reorder point for winter tires** instead of one flat threshold across every region.
+- **Add a pre-season inventory check** (e.g., August 1) as a standing trigger, with enough lead time to reorder before the rush hits.
+- **Track this as an ongoing metric** — backorder rate and at-risk revenue by region and season — so the next version of this problem gets caught before a customer ever notices.
 
-The first cell connects to `../data/tire_distributor.db` — no additional setup required.
+None of this requires new headcount or new capacity. It requires the replenishment calendar to match the season it's actually serving.
+
+
